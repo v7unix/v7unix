@@ -1,4 +1,5 @@
 #include	<stdio.h>
+#include <stdlib.h>
 #include "sed.h"
 
 char	*trans[040]  = {
