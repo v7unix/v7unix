@@ -5,7 +5,10 @@
 #include <signal.h>
 #include <sgtty.h>
 #include <setjmp.h>
-#define	NULL	0
+#include <stdlib.h>
+#include <string.h>
+#include <termios.h>
+#include <unistd.h>
 #define	FNSIZE	64
 #define	LBSIZE	512
 #define	ESIZE	128
@@ -20,6 +23,7 @@
 #define	CCL	6
 #define	NCCL	8
 #define	CDOL	10
+#undef CEOF
 #define	CEOF	11
 #define	CKET	12
 #define	CBACK	14
@@ -51,9 +55,8 @@ char	*linebp;
 int	ninbuf;
 int	io;
 int	pflag;
-long	lseek();
-int	(*oldhup)();
-int	(*oldquit)();
+void (*oldquit)(int);
+void (*oldhup)(int);
 int	vflag	= 1;
 int	xflag;
 int	xtflag;
@@ -93,22 +96,23 @@ int	*address();
 char	*getline();
 char	*getblock();
 char	*place();
-char	*mktemp();
-char	*malloc();
-char	*realloc();
 jmp_buf	savej;
+char template[8] = "eXXXXXX";
+
+void quit(int);
+void onintr(int);
+void onhup(int);
 
 main(argc, argv)
 char **argv;
 {
 	register char *p1, *p2;
-	extern int onintr(), quit(), onhup();
-	int (*oldintr)();
+        void (*oldintr)(int);
 
 	oldquit = signal(SIGQUIT, SIG_IGN);
 	oldhup = signal(SIGHUP, SIG_IGN);
 	oldintr = signal(SIGINT, SIG_IGN);
-	if ((int)signal(SIGTERM, SIG_IGN) == 0)
+	if (!signal(SIGTERM, SIG_IGN))
 		signal(SIGTERM, quit);
 	argv++;
 	while (argc > 1 && **argv=='-') {
@@ -143,15 +147,13 @@ char **argv;
 		globp = "r";
 	}
 	zero = (int *)malloc(nlall*sizeof(int));
-	tfname = mktemp("/tmp/eXXXXX");
+	tfname = mktemp(template);
 	init();
-	if (((int)oldintr&01) == 0)
-		signal(SIGINT, onintr);
-	if (((int)oldhup&01) == 0)
-		signal(SIGHUP, onhup);
+        signal(SIGINT, onintr);
+        signal(SIGHUP, onhup);
 	setjmp(savej);
 	commands();
-	quit();
+	quit(0);
 }
 
 commands()
@@ -215,7 +217,7 @@ commands()
 	case 'f':
 		setnoaddr();
 		filename(c);
-		puts(savedfile);
+		edputs(savedfile);
 		continue;
 
 	case 'g':
@@ -271,7 +273,7 @@ commands()
 		nonzero();
 		a1 = addr1;
 		do {
-			puts(getline(*a1++));
+			edputs(getline(*a1++));
 		} while (a1 <= addr2);
 		dot = addr2;
 		listf = 0;
@@ -282,7 +284,7 @@ commands()
 	case 'q':
 		setnoaddr();
 		newline();
-		quit();
+		quit(0);
 
 	case 'r':
 		filename(c);
@@ -345,7 +347,7 @@ commands()
 		setnoaddr();
 		newline();
 		xflag = 1;
-		puts("Entering encrypting mode!");
+		edputs("Entering encrypting mode!");
 		getkey();
 		kflag = crinit(key, perm);
 		continue;
@@ -562,7 +564,8 @@ exfile()
 	}
 }
 
-onintr()
+void
+onintr(int _x)
 {
 	signal(SIGINT, onintr);
 	putchr('\n');
@@ -570,7 +573,8 @@ onintr()
 	error(Q);
 }
 
-onhup()
+void
+onhup(int _x)
 {
 	signal(SIGINT, SIG_IGN);
 	signal(SIGHUP, SIG_IGN);
@@ -582,7 +586,7 @@ onhup()
 			putfile();
 	}
 	fchange = 0;
-	quit();
+	quit(0);
 }
 
 error(s)
@@ -593,7 +597,7 @@ char *s;
 	wrapp = 0;
 	listf = 0;
 	putchr('?');
-	puts(s);
+	edputs(s);
 	count = 0;
 	lseek(0, (long)0, 2);
 	pflag = 0;
@@ -709,7 +713,7 @@ putfile()
 				if(kflag)
 					crblock(perm, genbuf, n, count-n);
 				if(write(io, genbuf, n) != n) {
-					puts(WRERR);
+					edputs(WRERR);
 					error(Q);
 				}
 				nib = 511;
@@ -726,7 +730,7 @@ putfile()
 	if(kflag)
 		crblock(perm, genbuf, n, count-n);
 	if(write(io, genbuf, n) != n) {
-		puts(WRERR);
+		edputs(WRERR);
 		error(Q);
 	}
 }
@@ -767,24 +771,26 @@ int (*f)();
 
 callunix()
 {
-	register (*savint)(), pid, rpid;
+	register void (*savint)(int);
+        int pid, rpid;
 	int retcode;
 
 	setnoaddr();
 	if ((pid = fork()) == 0) {
 		signal(SIGHUP, oldhup);
 		signal(SIGQUIT, oldquit);
-		execl("/bin/sh", "sh", "-t", 0);
+		execl("/bin/sh", "sh", "-t", NULL);
 		exit(0100);
 	}
 	savint = signal(SIGINT, SIG_IGN);
 	while ((rpid = wait(&retcode)) != pid && rpid != -1)
 		;
 	signal(SIGINT, savint);
-	puts("!");
+	edputs("!");
 }
 
-quit()
+void
+quit(int _dummy)
 {
 	if (vflag && fchange && dol!=zero) {
 		fchange = 0;
@@ -891,7 +897,6 @@ putline()
 char *
 getblock(atl, iof)
 {
-	extern read(), write();
 	register bno, off;
 	register char *p1, *p2;
 	register int n;
@@ -1567,7 +1572,7 @@ putd()
 	putchr(r + '0');
 }
 
-puts(sp)
+edputs(sp)
 register char *sp;
 {
 	col = 0;
@@ -1653,18 +1658,18 @@ long startn;
 
 getkey()
 {
-	struct sgttyb b;
-	int save;
-	int (*sig)();
+        struct termios b;
+	struct termios save;
+	void (*sig)(int);
 	register char *p;
 	register c;
 
 	sig = signal(SIGINT, SIG_IGN);
-	if (gtty(0, &b) == -1)
+	if (tcgetattr(0, &b) == -1)
 		error("Input not tty");
-	save = b.sg_flags;
-	b.sg_flags &= ~ECHO;
-	stty(0, &b);
+	save = b;
+	b.c_cflag &= ~ECHO;
+	tcsetattr(0, TCSADRAIN, &b);
 	puts("Key:");
 	p = key;
 	while(((c=getchr()) != EOF) && (c!='\n')) {
@@ -1672,8 +1677,8 @@ getkey()
 			*p++ = c;
 	}
 	*p = 0;
-	b.sg_flags = save;
-	stty(0, &b);
+	b = save;
+	tcsetattr(0, TCSADRAIN, &b);
 	signal(SIGINT, sig);
 	return(key[0] != 0);
 }
@@ -1709,8 +1714,8 @@ char	*keyp, *permp;
 		close(1);
 		dup(pf[0]);
 		dup(pf[1]);
-		execl("/usr/lib/makekey", "-", 0);
-		execl("/lib/makekey", "-", 0);
+		execl("/usr/lib/makekey", "-", NULL);
+		execl("/lib/makekey", "-", NULL);
 		exit(1);
 	}
 	write(pf[1], buf, 10);
