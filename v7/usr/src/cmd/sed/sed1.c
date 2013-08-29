@@ -40,7 +40,7 @@ execute(file)
 char *file;
 {
 	register char *p1, *p2;
-	register union reptr	*ipc;
+	register struct reptr	*ipc;
 	int	c;
 	char	*execp;
 
@@ -133,7 +133,7 @@ char *file;
 
 			if(jflag) {
 				jflag = 0;
-				if((ipc = ipc->lb1) == 0) {
+				if((ipc = ipc->u.lb1) == 0) {
 					ipc = ptrspace;
 					break;
 				}
@@ -334,16 +334,16 @@ char	*alp, *aep;
 	}
 }
 substitute(ipc)
-union reptr	*ipc;
+struct reptr	*ipc;
 {
-	if(match(ipc->re1, 0) == 0)	return(0);
+	if(match(ipc->u.re1, 0) == 0)	return(0);
 
 	sflag = 1;
 	dosub(ipc->rhs);
 
 	if(ipc->gfl) {
 		while(*loc2) {
-			if(match(ipc->re1, 1) == 0) break;
+			if(match(ipc->u.re1, 1) == 0) break;
 			dosub(ipc->rhs);
 		}
 	}
@@ -401,7 +401,7 @@ char	*asp, *al1, *al2;
 }
 
 command(ipc)
-union reptr	*ipc;
+struct reptr	*ipc;
 {
 	register int	i;
 	register char	*p1, *p2, *p3;
@@ -422,7 +422,7 @@ union reptr	*ipc;
 		case CCOM:
 			delflag = 1;
 			if(!ipc->inar || dolflag) {
-				for(p1 = ipc->re1; *p1; )
+				for(p1 = ipc->u.re1; *p1; )
 					putc(*p1++, stdout);
 				putc('\n', stdout);
 			}
@@ -485,7 +485,7 @@ union reptr	*ipc;
 			break;
 
 		case ICOM:
-			for(p1 = ipc->re1; *p1; )
+			for(p1 = ipc->u.re1; *p1; )
 				putc(*p1++, stdout);
 			putc('\n', stdout);
 			break;
@@ -634,7 +634,7 @@ union reptr	*ipc;
 
 		case YCOM:
 			p1 = linebuf;
-			p2 = ipc->re1;
+			p2 = ipc->u.re1;
 			while(*p1 = p2[*p1])	p1++;
 			break;
 	}
@@ -698,11 +698,11 @@ arout()
 	aptr = abuf - 1;
 	while(*++aptr) {
 		if((*aptr)->command == ACOM) {
-			for(p1 = (*aptr)->re1; *p1; )
+			for(p1 = (*aptr)->u.re1; *p1; )
 				putc(*p1++, stdout);
 			putc('\n', stdout);
 		} else {
-			if((fi = fopen((*aptr)->re1, "r")) == NULL)
+			if((fi = fopen((*aptr)->u.re1, "r")) == NULL)
 				continue;
 			while((t = getc(fi)) != EOF) {
 				c = t;

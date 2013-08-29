@@ -117,7 +117,7 @@ fcomp()
 
 	register char	*p, *op, *tp;
 	char	*address();
-	union reptr	*pt, *pt1;
+	struct reptr	*pt, *pt1;
 	int	i;
 	struct label	*lpt;
 
@@ -207,7 +207,7 @@ swit:
 			case '{':
 				rep->command = BCOM;
 				rep->negfl = !(rep->negfl);
-				cmpend[depth++] = &rep->lb1;
+				cmpend[depth++] = &rep->u.lb1;
 				if(++rep >= ptrend) {
 					fprintf(stderr, "Too many commands: %s\n", linebuf);
 					exit(2);
@@ -287,8 +287,8 @@ swit:
 					fprintf(stderr, CGMES, linebuf);
 					exit(2);
 				}
-				rep->re1 = p;
-				p = text(rep->re1);
+				rep->u.re1 = p;
+				p = text(rep->u.re1);
 				break;
 			case 'c':
 				rep->command = CCOM;
@@ -297,8 +297,8 @@ swit:
 					fprintf(stderr, CGMES, linebuf);
 					exit(2);
 				}
-				rep->re1 = p;
-				p = text(rep->re1);
+				rep->u.re1 = p;
+				p = text(rep->u.re1);
 				break;
 			case 'i':
 				rep->command = ICOM;
@@ -311,8 +311,8 @@ swit:
 					fprintf(stderr, CGMES, linebuf);
 					exit(2);
 				}
-				rep->re1 = p;
-				p = text(rep->re1);
+				rep->u.re1 = p;
+				p = text(rep->u.re1);
 				break;
 
 			case 'g':
@@ -343,9 +343,9 @@ jtcommon:
 
 				if(*cp == '\0') {
 					if(pt = labtab->chain) {
-						while(pt1 = pt->lb1)
+						while(pt1 = pt->u.lb1)
 							pt = pt1;
-						pt->lb1 = rep;
+						pt->u.lb1 = rep;
 					} else
 						labtab->chain = rep;
 					break;
@@ -361,12 +361,12 @@ jtcommon:
 
 				if(lpt = search(lab)) {
 					if(lpt->address) {
-						rep->lb1 = lpt->address;
+						rep->u.lb1 = lpt->address;
 					} else {
 						pt = lpt->chain;
-						while(pt1 = pt->lb1)
+						while(pt1 = pt->u.lb1)
 							pt = pt1;
-						pt->lb1 = rep;
+						pt->u.lb1 = rep;
 					}
 				} else {
 					lab->chain = rep;
@@ -404,8 +404,8 @@ jtcommon:
 					fprintf(stderr, CGMES, linebuf);
 					exit(2);
 				}
-				rep->re1 = p;
-				p = text(rep->re1);
+				rep->u.re1 = p;
+				p = text(rep->u.re1);
 				break;
 
 			case 'd':
@@ -414,7 +414,7 @@ jtcommon:
 
 			case 'D':
 				rep->command = CDCOM;
-				rep->lb1 = ptrspace;
+				rep->u.lb1 = ptrspace;
 				break;
 
 			case 'q':
@@ -432,16 +432,16 @@ jtcommon:
 			case 's':
 				rep->command = SCOM;
 				seof = *cp++;
-				rep->re1 = p;
-				p = compile(rep->re1);
+				rep->u.re1 = p;
+				p = compile(rep->u.re1);
 				if(p == badp) {
 					fprintf(stderr, CGMES, linebuf);
 					exit(2);
 				}
-				if(p == rep->re1) {
-					rep->re1 = op;
+				if(p == rep->u.re1) {
+					rep->u.re1 = op;
 				} else {
-					op = rep->re1;
+					op = rep->u.re1;
 				}
 
 				if((rep->rhs = p) > reend) {
@@ -526,8 +526,8 @@ jtcommon:
 			case 'y':
 				rep->command = YCOM;
 				seof = *cp++;
-				rep->re1 = p;
-				p = ycomp(rep->re1);
+				rep->u.re1 = p;
+				p = ycomp(rep->u.re1);
 				if(p == badp) {
 					fprintf(stderr, CGMES, linebuf);
 					exit(2);
@@ -908,7 +908,7 @@ struct label	*ptr;
 dechain()
 {
 	struct label	*lptr;
-	union reptr	*rptr, *trptr;
+	struct reptr	*rptr, *trptr;
 
 	for(lptr = labtab; lptr < lab; lptr++) {
 
@@ -919,11 +919,11 @@ dechain()
 
 		if(lptr->chain) {
 			rptr = lptr->chain;
-			while(trptr = rptr->lb1) {
-				rptr->lb1 = lptr->address;
+			while(trptr = rptr->u.lb1) {
+				rptr->u.lb1 = lptr->address;
 				rptr = trptr;
 			}
-			rptr->lb1 = lptr->address;
+			rptr->u.lb1 = lptr->address;
 		}
 	}
 }
