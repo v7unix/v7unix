@@ -1,4 +1,4 @@
-CFLAGS = -n -O
+CFLAGS = -O
 
 all:	sed
 	:
@@ -11,7 +11,7 @@ cmp:	all
 	cmp sed /bin/sed
 	rm sed *.o
 
-sed:	sed0.o sed1.o; cc -s -o sed -n *.o
+sed:	sed0.o sed1.o; cc -o sed *.o
 
 sed0.o: sed0.c sed.h
 sed1.o: sed1.c sed.h
