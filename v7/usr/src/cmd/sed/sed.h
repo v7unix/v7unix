@@ -104,10 +104,8 @@ char	*lbend;
 struct	reptr {
 		char	*ad1;
 		char	*ad2;
-	union {
 		char	*re1;
 		struct reptr	*lb1;
-        } u;
 		char	*rhs;
 		FILE	*fcode;
 		char	command;
