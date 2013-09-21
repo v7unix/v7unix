@@ -1,0 +1,177 @@
+Description: Bring in to line with modern Unix APIs.
+ .
+ v7sed (0.0.0-1) unstable; urgency=low
+ .
+   * Initial release
+Author: David Jones <drj@pobox.com>
+
+---
+The information above should follow the Patch Tagging Guidelines, please
+checkout http://dep.debian.net/deps/dep3/ to learn about the format. Here
+are templates for supplementary fields that you might want to add:
+
+Origin: <vendor|upstream|other>, <url of original patch>
+Bug: <url in upstream bugtracker>
+Bug-Debian: http://bugs.debian.org/<bugnumber>
+Bug-Ubuntu: https://launchpad.net/bugs/<bugnumber>
+Forwarded: <no|not-needed|url proving that it has been forwarded>
+Reviewed-By: <name and email of someone who approved the patch>
+Last-Update: <YYYY-MM-DD>
+
+--- v7sed-0.0.0.orig/usr/src/cmd/sed/sed.h
++++ v7sed-0.0.0/usr/src/cmd/sed/sed.h
+@@ -32,8 +32,8 @@
+ #define NBRA	9
+ 
+ FILE	*fin;
+-union reptr	*abuf[ABUFSIZE];
+-union reptr **aptr;
++struct reptr	*abuf[ABUFSIZE];
++struct reptr **aptr;
+ char	*lastre;
+ char	ibuf[512];
+ char	*cbp;
+@@ -47,7 +47,7 @@ char	*reend;
+ char	*lbend;
+ char	*hend;
+ char	*lcomend;
+-union reptr	*ptrend;
++struct reptr	*ptrend;
+ int	eflag;
+ int	dolflag;
+ int	sflag;
+@@ -101,11 +101,11 @@ char	*cp;
+ char	*reend;
+ char	*lbend;
+ 
+-union	reptr {
+-	struct reptr1 {
++struct	reptr {
+ 		char	*ad1;
+ 		char	*ad2;
+ 		char	*re1;
++		struct reptr	*lb1;
+ 		char	*rhs;
+ 		FILE	*fcode;
+ 		char	command;
+@@ -113,19 +113,6 @@ union	reptr {
+ 		char	pfl;
+ 		char	inar;
+ 		char	negfl;
+-	};
+-	struct reptr2 {
+-		char	*ad1;
+-		char	*ad2;
+-		union reptr	*lb1;
+-		char	*rhs;
+-		FILE	*fcode;
+-		char	command;
+-		char	gfl;
+-		char	pfl;
+-		char	inar;
+-		char	negfl;
+-	};
+ } ptrspace[PTRSIZE], *rep;
+ 
+ 
+@@ -133,8 +120,8 @@ char	respace[RESIZE];
+ 
+ struct label {
+ 	char	asc[9];
+-	union reptr	*chain;
+-	union reptr	*address;
++	struct reptr	*chain;
++	struct reptr	*address;
+ } ltab[LABSIZE];
+ 
+ struct label	*lab;
+@@ -148,9 +135,9 @@ char	**eargv;
+ 
+ extern	char	bittab[];
+ 
+-union reptr	**cmpend[DEPTH];
++struct reptr	**cmpend[DEPTH];
+ int	depth;
+-union reptr	*pending;
++struct reptr	*pending;
+ char	*badp;
+ char	bad;
+ char	*compile();
+--- v7sed-0.0.0.orig/usr/src/cmd/sed/sed1.c
++++ v7sed-0.0.0/usr/src/cmd/sed/sed1.c
+@@ -1,4 +1,5 @@
+ #include	<stdio.h>
++#include <stdlib.h>
+ #include "sed.h"
+ 
+ char	*trans[040]  = {
+@@ -40,7 +41,7 @@ execute(file)
+ char *file;
+ {
+ 	register char *p1, *p2;
+-	register union reptr	*ipc;
++	register struct reptr	*ipc;
+ 	int	c;
+ 	char	*execp;
+ 
+@@ -334,7 +335,7 @@ char	*alp, *aep;
+ 	}
+ }
+ substitute(ipc)
+-union reptr	*ipc;
++struct reptr	*ipc;
+ {
+ 	if(match(ipc->re1, 0) == 0)	return(0);
+ 
+@@ -401,7 +402,7 @@ char	*asp, *al1, *al2;
+ }
+ 
+ command(ipc)
+-union reptr	*ipc;
++struct reptr	*ipc;
+ {
+ 	register int	i;
+ 	register char	*p1, *p2, *p3;
+--- v7sed-0.0.0.orig/usr/src/cmd/sed/sed0.c
++++ v7sed-0.0.0/usr/src/cmd/sed/sed0.c
+@@ -1,4 +1,5 @@
+ #include <stdio.h>
++#include <stdlib.h>
+ #include "sed.h"
+ 
+ struct label	*labtab = ltab;
+@@ -117,7 +118,7 @@ fcomp()
+ 
+ 	register char	*p, *op, *tp;
+ 	char	*address();
+-	union reptr	*pt, *pt1;
++	struct reptr	*pt, *pt1;
+ 	int	i;
+ 	struct label	*lpt;
+ 
+@@ -908,7 +909,7 @@ struct label	*ptr;
+ dechain()
+ {
+ 	struct label	*lptr;
+-	union reptr	*rptr, *trptr;
++	struct reptr	*rptr, *trptr;
+ 
+ 	for(lptr = labtab; lptr < lab; lptr++) {
+ 
+--- v7sed-0.0.0.orig/usr/src/cmd/sed/makefile
++++ v7sed-0.0.0/usr/src/cmd/sed/makefile
+@@ -1,4 +1,4 @@
+-CFLAGS = -n -O
++CFLAGS = -O
+ 
+ all:	sed
+ 	:
+@@ -11,7 +11,7 @@ cmp:	all
+ 	cmp sed /bin/sed
+ 	rm sed *.o
+ 
+-sed:	sed0.o sed1.o; cc -s -o sed -n *.o
++sed:	sed0.o sed1.o; cc -o sed *.o
+ 
+ sed0.o: sed0.c sed.h
+ sed1.o: sed1.c sed.h

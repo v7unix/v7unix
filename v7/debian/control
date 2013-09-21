@@ -1,0 +1,14 @@
+Source: v7sed
+Section: optional
+Priority: extra
+Maintainer: David Jones <drj@pobox.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: https://github.com/v7unix/v7unix
+#Vcs-Git: git://git.debian.org/collab-maint/v7sed.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/v7sed.git;a=summary
+
+Package: v7sed
+Architecture: any
+Depends:
+Description: sed from Unix version 7, frozen in a timewarp

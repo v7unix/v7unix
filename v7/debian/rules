@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+build: build-arch
+build-arch: debian/tmp/usr/bin
+	$(CC) -o debian/tmp/usr/bin/v7sed usr/src/cmd/sed/*.c
+build-indep:
+
+clean:
+	-rm -f usr/src/cmd/sed/*.o usr/src/cmd/sed/sed
+	-mv debian/tmp debian/tmp-to-be-deleted
+	-rm -fr debian/tmp-to-be-deleted
+
+binary: binary-arch binary-indep
+binary-arch: build-arch
+	@mkdir -p debian/tmp/DEBIAN
+	dpkg-gencontrol
+	dpkg-deb --build debian/tmp ../v7sed_0.0.0-1_amd64.deb
+binary-indep: build-indep
+
+debian/tmp/usr/bin:
+	@mkdir -p $@

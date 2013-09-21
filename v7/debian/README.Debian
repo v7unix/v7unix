@@ -1,0 +1,7 @@
+v7sed for Debian
+----------------
+
+This utility was called "sed" in Version 7 Unix; it's called
+"v7sed" here to avoid conflict with the more modern "sed".
+
+ -- David Jones <drj@pobox.com>  Fri, 20 Sep 2013 20:56:42 +0100
