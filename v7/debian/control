@@ -1,5 +1,5 @@
 Source: v7sed
-Section: optional
+Section: editors
 Priority: extra
 Maintainer: David Jones <drj@pobox.com>
 Build-Depends: debhelper (>= 8.0.0)
