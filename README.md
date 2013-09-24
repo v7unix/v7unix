@@ -1,6 +1,6 @@
 # v7unix
 
-The Version 7 Unix sources compiled on contemporary system using
+The Version 7 Unix sources compiled on contemporary systems using
 contemporary C compilers and system headers.
 
 # Implementation Status
