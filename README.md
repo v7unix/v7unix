@@ -27,7 +27,7 @@ sudo apt-get install v7sed
 ```
 
 (the last step seems to require you to "Install these packages
-without verification", I've no idea how I got about removing
+without verification", I've no idea how I go about removing
 that)
 
 To make the source and binary packages:
