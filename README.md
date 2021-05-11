@@ -9,7 +9,7 @@ contemporary C compilers and system headers.
 
 # Source
 
-Unix Version 7 tarbomb from http://minnie.tuhs.org/Archive/PDP-11/Distributions/research/Henry_Spencer_v7/v7.tar.gz
+Unix Version 7 tarbomb from https://minnie.tuhs.org/Archive/Distributions/Research/Henry_Spencer_v7/v7.tar.gz
 
 # Ubuntu / v7sed
 
